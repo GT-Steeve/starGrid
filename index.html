@@ -3,22 +3,67 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Grille Couleurs</title>
+    <title>Color Tap - Accueil</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(160deg, #0f172a, #1e293b);
+            color: white;
+            font-family: sans-serif;
+            text-align: center;
+        }
 
-    <link rel="stylesheet" href="asset/css/style.css">
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        button {
+            margin: 10px;
+            padding: 15px 25px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: #f472b6;
+            color: white;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            transform: scale(1.1);
+            background: #fb7185;
+        }
+    </style>
 </head>
 
 <body>
 
-    <h1>🎨 Grille Colorée</h1>
+    <h1>🎮 Color Tap</h1>
+    <p>Choisissez votre mode de difficulté :</p>
 
-    <div class="grid" id="grid"></div>
+    <div>
+        <button onclick="startGame('facile')">Facile</button>
+        <button onclick="startGame('moyen')">Normal</button>
+        <button onclick="startGame('doom')">Doom</button>
+    </div>
 
-    <button onclick="resetGrid()">Réinitialiser</button>
-
-    <script src="asset/js/reset.js"></script>
-
-    <script src="asset/js/grid.js"></script>
+    <script>
+        function startGame(mode) {
+            // Redirection vers game.html avec le mode choisi
+            window.location.href = `game.html?mode=${mode}`;
+        }
+    </script>
 
 </body>
 
