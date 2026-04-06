@@ -1,0 +1,35 @@
+{
+  "facile": {
+    "gridColors": [
+      null, null, null, null, null,
+      null, null, null, null, null,
+      null, null, null, null, null,
+      null, null, null, null, null,
+      null, null, null, null, null
+    ],
+    "starIndex": 7,
+    "starClicksRequired": 2
+  },
+  "moyen": {
+    "gridColors": [
+      null, null, null, null, null,
+      null, null, null, null, null,
+      null, null, null, null, null,
+      null, null, null, null, null,
+      null, null, null, null, null
+    ],
+    "starIndex": 12,
+    "starClicksRequired": 5
+  },
+  "doom": {
+    "gridColors": [
+      null, null, null, null, null,
+      null, null, null, null, null,
+      null, null, null, null, null,
+      null, null, null, null, null,
+      null, null, null, null, null
+    ],
+    "starIndex": 20,
+    "starClicksRequired": 8
+  }
+}

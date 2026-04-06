@@ -1,2 +1,3 @@
 v0.00.1 = lancement
 v0.00.2 = taille agrandis pour le mobile
+v0.00.3 = essaie JSON

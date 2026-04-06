@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Color Tap - Jeu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* --- Global --- */
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      transition: 0.3s;
+    }
+
+    body.dark {
+      background: linear-gradient(160deg, #0f172a, #1e293b);
+      color: white;
+    }
+
+    body.light {
+      background: #f1f5f9;
+      color: #111;
+    }
+
+    h1 {
+      margin: 10px;
+      font-size: 2rem;
+    }
+
+    /* --- Grille --- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      width: 90vw;
+      max-width: 450px;
+    }
+
+    .cell {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      background: #1e293b;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      transition: 0.3s;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .light .cell {
+      background: white;
+    }
+
+    .cell:active {
+      transform: scale(0.9);
+    }
+
+    /* --- Buttons --- */
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .panel {
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    /* --- Animation étoile --- */
+    @keyframes starWin {
+      0% {
+        transform: scale(1) rotate(0deg);
+        box-shadow: 0 0 0px gold;
+      }
+
+      50% {
+        transform: scale(1.8) rotate(180deg);
+        box-shadow: 0 0 40px gold, 0 0 60px gold;
+      }
+
+      100% {
+        transform: scale(1) rotate(360deg);
+        box-shadow: 0 0 20px gold;
+      }
+    }
+
+    .star-found {
+      animation: starWin 1.5s ease forwards;
+    }
+
+    /* --- Particules --- */
+    .particle {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: gold;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: explode 0.8s ease forwards;
+    }
+
+    @keyframes explode {
+      to {
+        transform: translate(var(--x), var(--y));
+        opacity: 0;
+      }
+    }
+
+    /* --- Popup victoire --- */
+    .popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .popup-content {
+      background: #1e293b;
+      padding: 25px;
+      border-radius: 15px;
+      text-align: center;
+      color: white;
+      animation: pop 0.3s ease;
+    }
+
+    @keyframes pop {
+      from {
+        transform: scale(0.7);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .buttons button {
+      margin: 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body class="dark">
+  <h1>🎮 Color Tap</h1>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="panel">
+    <div>👆 Clics : <span id="totalClicks">0</span></div>
+    <div>🏆 Meilleur score : <span id="bestScore">-</span></div>
+  </div>
+
+  <button onclick="toggleTheme()">🌙 / ☀️</button>
+  <button onclick="resetGame()">Reset</button>
+  <button onclick="goHome()">🏠 Abandonner</button>
+
+  <!-- Popup victoire -->
+  <div id="popup" class="popup hidden">
+    <div class="popup-content">
+      <h2>🎉 Bravo !</h2>
+      <p>Tu as trouvé l’étoile en <strong id="finalScore"></strong> clics !</p>
+      <div class="buttons">
+        <button onclick="restartGame()">🔁 Rejouer</button>
+        <button onclick="closePopup()">👀 Voir la grille</button>
+        <button onclick="goHome()">🏠 Accueil</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const grid = document.getElementById("grid");
+    const colors = ["#f472b6", "#fb7185", "#facc15", "#4ade80", "#22d3ee", "#60a5fa", "#a78bfa"];
+    let gameMode = new URLSearchParams(window.location.search).get("mode") || "facile";
+
+    let savedColors = Array(25).fill(null);
+    let clickCounts = Array(25).fill(0);
+    let totalClicks = 0;
+    let bestScore = null;
+    let starUnlocked = false;
+    let starIndex = 0;
+    let starClicksRequired = 2;
+
+    // Charger grid.json depuis la racine
+    fetch('grid.json')
+      .then(r => r.json())
+      .then(data => {
+        savedColors = data[gameMode].gridColors;
+        starIndex = data[gameMode].starIndex;
+        starClicksRequired = data[gameMode].starClicksRequired;
+        createGrid();
+      });
+
+    function save() {
+      localStorage.setItem("gridColors", JSON.stringify(savedColors));
+      localStorage.setItem("clickCounts", JSON.stringify(clickCounts));
+      localStorage.setItem("totalClicks", totalClicks);
+      localStorage.setItem("bestScore", bestScore);
+      localStorage.setItem("starUnlocked", starUnlocked);
+    }
+
+    function getRandomColor() { return colors[Math.floor(Math.random() * colors.length)]; }
+
+    function createParticles(x, y) {
+      for (let i = 0; i < 15; i++) {
+        const p = document.createElement("div");
+        p.className = "particle";
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = Math.random() * 80;
+        p.style.setProperty("--x", Math.cos(angle) * distance + "px");
+        p.style.setProperty("--y", Math.sin(angle) * distance + "px");
+        p.style.left = x + "px";
+        p.style.top = y + "px";
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 800);
+      }
+    }
+
+    function createGrid() {
+      grid.innerHTML = "";
+      for (let i = 0; i < 25; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        if (savedColors[i]) cell.style.backgroundColor = savedColors[i];
+        cell.textContent = clickCounts[i];
+
+        if (starUnlocked && i === starIndex) cell.textContent = "⭐";
+
+        cell.addEventListener("click", () => {
+          const color = getRandomColor();
+          cell.style.backgroundColor = color;
+          clickCounts[i]++;
+          totalClicks++;
+          cell.textContent = clickCounts[i];
+          savedColors[i] = color;
+
+          if (!starUnlocked && i === starIndex && clickCounts[i] >= starClicksRequired) {
+            starUnlocked = true;
+            cell.textContent = "⭐";
+            cell.classList.add("star-found");
+            const rect = cell.getBoundingClientRect();
+            createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+            setTimeout(() => {
+              document.getElementById("finalScore").textContent = totalClicks;
+              document.getElementById("popup").classList.remove("hidden");
+            }, 2000);
+          }
+
+          document.getElementById("totalClicks").textContent = totalClicks;
+          document.getElementById("bestScore").textContent = bestScore ?? "-";
+          save();
+        });
+
+        grid.appendChild(cell);
+      }
+    }
+
+    function closePopup() { document.getElementById("popup").classList.add("hidden"); }
+    function restartGame() { localStorage.clear(); location.reload(); }
+    function resetGame() { localStorage.clear(); location.reload(); }
+    function toggleTheme() { document.body.classList.toggle("dark"); document.body.classList.toggle("light"); }
+    function goHome() { window.location.href = "index.html"; }
+  </script>
+</body>
+</html>
